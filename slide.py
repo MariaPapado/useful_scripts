@@ -21,12 +21,13 @@ for x in range(0, height, step):
     else:
         img_x.append(height-psize)
         break
-    for y in range(0, width, step):
-        if y+psize<=width:
-            img_y.append(y)
-        else:
-            img_y.append(width-psize)
-            break
+    if x==0:
+        for y in range(0, width, step):
+            if y+psize<=width:
+                img_y.append(y)
+            else:
+                img_y.append(width-psize)
+                break
         
 
 print(img_x)

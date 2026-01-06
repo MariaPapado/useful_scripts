@@ -1,5 +1,3 @@
-##(what i did for clouds)
-
 import os
 import cv2
 import numpy as np
@@ -128,27 +126,39 @@ def create_mask_from_polygon(coordinates, width, height):
     return mask
 
 def get_mask_from_annotation(annotations):
-
-
-    width, height = 512, 512
-    mask_total = np.zeros((width, height),dtype=np.uint8)
+    print(annotations[0]['height'])
+    width, height = int(annotations[0]['width']), int(annotations[0]['height'])
+    mask_total = np.zeros((height, width), dtype=np.uint8)  # Ensure height x width is correct
 
     for ann in annotations:
-        #print(ann)
         for mask_rle in ann['masks']:
+            # Decode the RLE mask
             mask = decode_cvat_rle_mask(mask_rle['rle'], int(mask_rle['width']), int(mask_rle['height'])).astype(bool)
-            mask = 1*mask
-            mask_total[int(mask_rle['top']):int(mask_rle['top'])+int(mask_rle['height']),int(mask_rle['left']):int(mask_rle['left'])+int(mask_rle['width'])][mask!=0] = mask[mask!=0]#.copy()
-
+            mask = 1 * mask
+            
+            # Ensure the mask is being correctly applied to the region of interest in mask_total
+            top, left = int(mask_rle['top']), int(mask_rle['left'])
+            mask_height, mask_width = int(mask_rle['height']), int(mask_rle['width'])
+            
+            # Check if the mask fits within the bounds of mask_total
+            if top + mask_height <= mask_total.shape[0] and left + mask_width <= mask_total.shape[1]:
+                mask_total[top:top + mask_height, left:left + mask_width][mask != 0] = mask[mask != 0]
+            else:
+                print(f"Warning: Mask for {mask_rle['label']} exceeds image bounds.")
+            
         for poly_string in ann['polys']:
             polygon_coordinates = parse_polygon_coordinates(poly_string['points'])
             mask_from_polygon = create_mask_from_polygon(polygon_coordinates, width, height).astype(bool)
-            mask_from_polygon = (1*mask_from_polygon).astype(np.uint8)
-            mask_total[mask_from_polygon!=0] = mask_from_polygon[mask_from_polygon!=0]#.copy()
-
-    return mask_total
+            mask_from_polygon = (1 * mask_from_polygon).astype(np.uint8)
+            
+            # Ensure mask_from_polygon fits within the bounds of mask_total
+            if mask_from_polygon.shape[0] <= mask_total.shape[0] and mask_from_polygon.shape[1] <= mask_total.shape[1]:
+                mask_total[mask_from_polygon != 0] = mask_from_polygon[mask_from_polygon != 0]
+            else:
+                print(f"Warning: Polygon mask for {poly_string['label']} exceeds image bounds.")
     
-images_files = os.listdir('./images/images/')
+    return mask_total    
+images_files = os.listdir('./images/imgs/')
 
 ann_files = read_xml_annotations('annotations.xml')
 
@@ -161,6 +171,4 @@ for ann in ann_files:
 
 
     #'images/'
-    
-    
     

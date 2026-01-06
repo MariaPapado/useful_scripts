@@ -167,7 +167,7 @@ for ann in ann_files:
     print(bin_mask.shape)
     bin_mask = bin_mask*255
     bin_mask = Image.fromarray(bin_mask)
-    bin_mask.save('./labels/{}'.format(ann['name'][7:]))
+    bin_mask.save('./labels/{}'.format(os.path.basename(ann['name'])))
 
 
     #'images/'
